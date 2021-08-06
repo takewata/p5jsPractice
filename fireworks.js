@@ -14,10 +14,46 @@ function draw(){
 }
 
 class FireWork{
-    constructor(){
-        this.y = 480;
-        this.fireHeight = 480-100;//花火の高さを設定
-        this.vy = 20;//花火が打ちあがる速さ
+    constructor(x,y,vx,vy,gv){
+        //フレームカウンター
+        this.frame = 0;
+        this.type = 0;
+        this.next = 0;
+        //花火の色
+        this.r = random(155)+80;
+        this.g = random(155)+80;
+        this.b = random(155)+80;
+        this.a = 255;
+        //初期位置
+        this.x = x;
+        this.y = y;
+        //玉の大きさ
+        this.w = random(10,5);
+        //打ち上がる高さ
+        this.maxHeight = random(height/6, height/2);
+        this.fireHeight = height - this.maxHeight;//花火の高さを設定
+        //重力
+        this.vx = vx;
+        this.vy = vy;
+        this.gv = gv;
+
+        //残像表示用配列
+        this.afterImages = [];
+        //爆発用配列
+        this.explosions = [];
+        this.exDelay = random(10,40);//消えてから爆発までの時間
+        this.exLarge = random(5,15);//爆発の大きさ
+        this.exBall = random(20,100);//爆発の玉の数
+        this.extend = random(20, 40);//爆発から消えるまでの長さ
+        this.exStop = 0.96;//爆発のブレーキ
+    }
+
+    get getFrame(){
+        return this.frame;
+    }
+
+    get getType(){
+        return this.type;
     }
 
     fire(){
