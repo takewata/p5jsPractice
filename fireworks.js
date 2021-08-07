@@ -21,7 +21,6 @@ function draw(){
     //打ち上がるスピード
         let speed = random(10, 30);
         fireworks.push(new FireWork(random(width), height, 0, speed, 0.98));
-        print("ok");
     }
 
     for (let fw of fireworks){
@@ -92,9 +91,8 @@ class FireWork{
         if (this.y * 0.8 < this.maxHeight){
             this.a = this.a - 6;
         }
-
         this.x += this.vx;
-        this.y -= this.vy * ((this.fireHeight-(height-this.y)/this.fireHeight));
+        this.y -= this.vy * ((this.fireHeight-(height-this.y))/this.fireHeight);
         this.update(this.x, this.y, this.w);
     }
 
@@ -123,3 +121,7 @@ function drawStar(){
         ellipse(s[0],s[1],s[2],s[2]);
     }
 }
+
+function keyPressed() {
+    save("fireworks.jpg"); //jpgで保存
+  }
