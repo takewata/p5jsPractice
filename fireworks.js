@@ -1,5 +1,4 @@
 //参考：https://qiita.com/iNaoki04/items/5d420440cf3d89f54f82
-
 let fireworks = [];
 let star = [];
 
@@ -94,6 +93,16 @@ class FireWork{
         this.x += this.vx;
         this.y -= this.vy * ((this.fireHeight-(height-this.y))/this.fireHeight);
         this.update(this.x, this.y, this.w);
+
+        this.afterImages.push(new Afterimage(this.r, this.g, this.b, this.x, this.y, this.w, this.a));
+
+        for (let ai of this.afterImages){
+            if (ai.getAlpha <= 0){
+                this.afterImages.filter((n) => ai);
+                continue;
+            }
+            ai.rsImage();
+        }
     }
 
     update(x,y,w){
@@ -104,6 +113,49 @@ class FireWork{
             fill(c);
             ellipse(x,y,w,w);
         }
+    }
+}
+
+class Afterimage{
+    constructor(r,g,b,x,y,w,a){
+        this.frame = 0;
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.a = a;
+        this.vx = random(-0.24, 0.24);
+        this.vy = random(0.2, 0.8);
+        this.vw = random(0.05, 0.2);
+    }
+
+    get getAlpha(){
+        return this.a;
+    }
+
+    rsImage(){ //描画と次の描画のための値の更新
+        if(0 < this.a){
+            this.update(this.r, this.g, this.b, this.x, this.y, this.w, this.a)
+            this.r += 4;
+            this.g += 4;
+            this.b += 4;
+            this.x = this.x + this.vx;
+            this.y = this.y + this.vy;
+            if (this.w > 0){
+                this.w -= this.vw;
+            }
+            this.a = this.a - 4;
+        }
+    }
+
+    update(r, g, b, x, y, w, a){
+        this.frame++;
+        let c = color(r, g, b);
+        c.setAlpha(a);
+        fill(c);
+        ellipse(x, y, w, w);
     }
 }
 
@@ -121,7 +173,3 @@ function drawStar(){
         ellipse(s[0],s[1],s[2],s[2]);
     }
 }
-
-function keyPressed() {
-    save("fireworks.jpg"); //jpgで保存
-  }
