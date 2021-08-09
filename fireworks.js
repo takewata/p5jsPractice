@@ -3,7 +3,7 @@ let fireworks = [];
 let star = [];
 
 function setup(){
-    createCanvas(480,480); //キャンバスを準備
+    createCanvas(700,700); //キャンバスを準備
     colorMode(RGB,255); //色のモードを設定
     frameRate(60); //1秒間のフレーム数
     this.preStar(); //star配列に星を準備
@@ -32,7 +32,7 @@ function draw(){
 }
 
 class FireWork{
-    constructor(x,y,vx,vy,gv){
+    constructor(x, y, vx, vy, gv){
         //フレームカウンター
         this.frame = 0;
         this.type = 0;
@@ -60,8 +60,8 @@ class FireWork{
         //爆発用配列
         this.explosions = [];
         this.exDelay = random(10, 40);//消えてから爆発までの時間
-        this.exLarge = random(5, 15);//爆発の大きさ
-        this.exBall = random(20, 100);//爆発の玉の数
+        this.large = random(5, 15);//爆発の大きさ
+        this.ball = random(20, 100);//爆発の玉の数
         this.extend = random(20, 40);//爆発から消えるまでの長さ
         this.exStop = 0.96;//爆発のブレーキ
     }
@@ -80,7 +80,7 @@ class FireWork{
                 this.rising();
                 break;
             case 1:
-                this.explosions();
+                this.explosion();
                 break;
         }
     }
@@ -92,29 +92,97 @@ class FireWork{
         }
         this.x += this.vx;
         this.y -= this.vy * ((this.fireHeight-(height-this.y))/this.fireHeight);
-        this.update(this.x, this.y, this.w);
 
         this.afterImages.push(new Afterimage(this.r, this.g, this.b, this.x, this.y, this.w, this.a));
 
         for (let ai of this.afterImages){
             if (ai.getAlpha <= 0){
-                this.afterImages.filter((n) => ai);
+                this.afterImages = this.afterImages.filter((n) => n !== ai);
                 continue;
             }
             ai.rsImage();
         }
+
+        this.update(this.x, this.y, this.w, this.a);
+
+        //すべての表示が消えたら，this.typeを変更する
+        if (0 == this.afterImages.length){
+            if (0 == this.next){
+                //消えてから爆発まで遅延させる
+                this.next = this.frame + Math.round(this.exDelay);
+            }
+            else if (this.next == this.frame){
+                for (let i = 0; i < this.ball; i++){
+                    //爆発の角度
+                    let r = random(0, 360);
+                    //花火の内側を作る
+                    let s = random(0.1, 0.9); //花火の内側はそれぞれ低い確率で計算
+                    let vx = Math.sin((r*Math.PI)/180) * s * this.large; //this.large 爆発の最大となっている
+                    let vy = Math.cos((r*Math.PI)/180) * s * this.large;
+                    this.explosions.push(new FireWork(this.x, this.y, vx, vy, this.exStop));
+                    //花火の輪郭を作る
+                    let cr = random(0, 360); //花火の輪郭は高い確率で計算
+                    let cs = random(0.9, 1);
+                    let cvx = Math.sin((r*Math.PI)/180) * cs * this.large; //this.large 爆発の最大となっている
+                    let cvy = Math.cos((r*Math.PI)/180) * cs * this.large;
+                    this.explosions.push(new FireWork(this.cx, this.cy, cvx, cvy, this.exStop));
+                }
+                this.a = 255;
+                this.type = 1;
+            }
+        }
+
     }
 
-    update(x,y,w){
+    update(x,y,w,a){
         this.frame++;
-        if(0 < this.a){
+        if(0 < a){
             let c = color(this.r,this.g,this.b);
-            c.setAlpha(this.a);
+            c.setAlpha(a);
             fill(c);
             ellipse(x,y,w,w);
         }
     }
+
+    explosion(){
+        for (let ex of this.explosions){
+            ex.frame++;
+            //爆発し終わったものから排除する．
+                if(2 == ex.getType){
+                    this.explosions = this.explosions.filter((n) => n !== ex);
+                    continue;
+                }
+                
+            if(0 == Math.round(random(0, 32))){
+                ex.afterImages.push(new Afterimage(this.r, this.g, this.b, ex.x, ex.y, ex.w, ex.a))
+            }
+
+            for(let ai of ex.afterImages){
+                if(ai.getAlpha < 0){
+                    ex.afterImages = ex.afterImages.filter((n)=>n!==ai);
+                    continue;
+                }
+                ai.exImage();
+            }
+
+            this.update(ex.x, ex.y, ex.w, ex.a);
+            ex.x += ex.vx;
+            ex.y += ex.vy;
+            ex.vx = ex.vx * ex.gv;
+            ex.vy = ex.vy * ex.gv;
+            ex.vy = ex.vy + ex.gv/30;
+
+            if(this.extend < ex.frame){
+                ex.w -= 0.1;
+                ex.a -= 4;
+                if(ex.a < 0 || 0 === ex.afterImages.length){
+                    ex.type = 2;
+                }
+            }
+        }
+    }
 }
+
 
 class Afterimage{
     constructor(r,g,b,x,y,w,a){
@@ -144,7 +212,7 @@ class Afterimage{
             this.x = this.x + this.vx;
             this.y = this.y + this.vy;
             if (this.w > 0){
-                this.w -= this.vw;
+                this.w = this.w - this.vw;
             }
             this.a = this.a - 4;
         }
@@ -156,6 +224,21 @@ class Afterimage{
         c.setAlpha(a);
         fill(c);
         ellipse(x, y, w, w);
+    }
+
+    exImage() {
+        if(this.a > 0){
+            this.update(this.r, this.g, this.b, this.x, this.y, this.w, this.a);
+            this.r += 2.5;
+            this.g += 2.5;
+            this.b += 2.5;
+            this.x += this.x + this.vx;
+            this.y += this.y + this.vy;
+            if (0 < this.w){
+                this.w = this.w - this.vw;
+            }
+            this.a = this.a - 1.5;
+        }
     }
 }
 
