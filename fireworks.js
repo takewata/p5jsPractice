@@ -1,4 +1,6 @@
 //参考：https://qiita.com/iNaoki04/items/5d420440cf3d89f54f82
+const X_AXIS = 1;
+const Y_AXIS = 2;
 let fireworks = [];
 let star = [];
 
@@ -11,7 +13,7 @@ function setup(){
 
 function draw(){
     //背景色を設定
-    background(0);
+    setGradient(0, 0, width, height, color(0, 0, 0), color(24, 32, 72), Y_AXIS);
     noStroke(); //枠線を描画しない
 
     this.drawStar(); //星を描画，drawStarのみ毎回呼び出すことで，キラキラした星を描く
@@ -111,27 +113,26 @@ class FireWork{
                 //消えてから爆発まで遅延させる
                 this.next = this.frame + Math.round(this.exDelay);
             }
-            else if (this.next == this.frame){
+            else if (this.next === this.frame){
                 for (let i = 0; i < this.ball; i++){
                     //爆発の角度
                     let r = random(0, 360);
                     //花火の内側を作る
                     let s = random(0.1, 0.9); //花火の内側はそれぞれ低い確率で計算
-                    let vx = Math.sin((r*Math.PI)/180) * s * this.large; //this.large 爆発の最大となっている
-                    let vy = Math.cos((r*Math.PI)/180) * s * this.large;
+                    let vx = Math.cos((r*Math.PI)/180) * s * this.large; //this.large 爆発の最大となっている
+                    let vy = Math.sin((r*Math.PI)/180) * s * this.large;
                     this.explosions.push(new FireWork(this.x, this.y, vx, vy, this.exStop));
                     //花火の輪郭を作る
                     let cr = random(0, 360); //花火の輪郭は高い確率で計算
                     let cs = random(0.9, 1);
-                    let cvx = Math.sin((r*Math.PI)/180) * cs * this.large; //this.large 爆発の最大となっている
-                    let cvy = Math.cos((r*Math.PI)/180) * cs * this.large;
-                    this.explosions.push(new FireWork(this.cx, this.cy, cvx, cvy, this.exStop));
+                    let cvx = Math.cos((cr*Math.PI)/180) * cs * this.large; //this.large 爆発の最大となっている
+                    let cvy = Math.sin((cr*Math.PI)/180) * cs * this.large;
+                    this.explosions.push(new FireWork(this.x, this.y, cvx, cvy, this.exStop));
                 }
                 this.a = 255;
                 this.type = 1;
             }
         }
-
     }
 
     update(x,y,w,a){
@@ -147,19 +148,14 @@ class FireWork{
     explosion(){
         for (let ex of this.explosions){
             ex.frame++;
-            //爆発し終わったものから排除する．
-                if(2 == ex.getType){
-                    this.explosions = this.explosions.filter((n) => n !== ex);
-                    continue;
-                }
                 
-            if(0 == Math.round(random(0, 32))){
-                ex.afterImages.push(new Afterimage(this.r, this.g, this.b, ex.x, ex.y, ex.w, ex.a))
+            if(0 === Math.round(random(0, 32))){
+                ex.afterImages.push(new Afterimage(this.r, this.g, this.b, ex.x, ex.y, ex.w, ex.a));
             }
 
             for(let ai of ex.afterImages){
                 if(ai.getAlpha < 0){
-                    ex.afterImages = ex.afterImages.filter((n)=>n!==ai);
+                    ex.afterImages = ex.afterImages.filter((n)=>n !== ai);
                     continue;
                 }
                 ai.exImage();
@@ -175,14 +171,20 @@ class FireWork{
             if(this.extend < ex.frame){
                 ex.w -= 0.1;
                 ex.a -= 4;
-                if(ex.a < 0 || 0 === ex.afterImages.length){
+                if(ex.a < 0 && 0 === ex.afterImages.length){
                     ex.type = 2;
                 }
             }
+
+            //爆発し終わったものから排除する．
+            if(2 === ex.getType){
+                this.explosions = this.explosions.filter((n) => n !== ex);
+                continue;
+            }
+
         }
     }
 }
-
 
 class Afterimage{
     constructor(r,g,b,x,y,w,a){
@@ -232,12 +234,32 @@ class Afterimage{
             this.r += 2.5;
             this.g += 2.5;
             this.b += 2.5;
-            this.x += this.x + this.vx;
-            this.y += this.y + this.vy;
+            this.x = this.x + this.vx;
+            this.y = this.y + this.vy;
             if (0 < this.w){
                 this.w = this.w - this.vw;
             }
             this.a = this.a - 1.5;
+        }
+    }
+}
+
+function setGradient(x, y, w, h, c1, c2, axis){
+    noFill();
+    if (axis === Y_AXIS){
+        for (let i = y; i <= y + h; i++){
+            let inter = map(i, y, y + h, 0, 1);
+            let c = lerpColor(c1, c2, inter);
+            stroke(c);
+            line(x, i, x + w, i);
+        }
+    }
+    else if (axis === X_AXIS){
+        for (let i = x; i <= x + w; i++){
+            let inter = map(i, x, x + w, 0, 1);
+            let c = lerpColor(c1, c2, inter);
+            stroke(c);
+            line(i, y, i, y + h);
         }
     }
 }
